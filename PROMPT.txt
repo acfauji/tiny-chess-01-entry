@@ -1,0 +1,21 @@
+Build a chess engine in main.py for the make.fun tiny-chess-01 bounty.
+
+Requirements:
+- main.py ≤ 4096 bytes as committed (comments, whitespace count)
+- Python 3.13 standard library only
+- Deterministic: no clock, no unseeded randomness, fixed depth/nodes search
+- No model calls
+- Alpha-beta search with fixed depth (3+ ply) or fixed node budget
+- Material + piece-square table evaluation
+- Must beat sunfish 4KB baseline (Elo ~1325 practice, ~1365 on 6-game)
+- 8 games per trial against gauntlet, 1800s wall time
+- Must be deterministic for replay (same moves given same position)
+
+The engine talks to env at MAKEFUN_ENV_URL:
+- POST /game {} -> game in play
+- POST /move {game, move} -> play move
+- Game ends: checkmate, draw rules, 200 ply adjudication, 10s move limit, resignation
+
+Current main.py is a 1-ply capture heuristic. Replace with alpha-beta depth 3 search with material + PST evaluation. Keep it under 4096 bytes. Use 10x12 mailbox board representation.
+
+Files to write: main.py only (no other files). Use lzma compression if needed to fit more logic.
