@@ -1,6 +1,6 @@
 import json,os,sys,urllib.error,urllib.request
 E=os.environ.get("MAKEFUN_ENV_URL")or sys.exit("MAKEFUN_ENV_URL")
-V={c:v for c,v in zip("pnbrqkPNBRQK",[1,3,3,5,9,100]*2)}
+V={"p":1,"n":3,"b":3,"r":5,"q":9,"k":100}
 P=[100,-3,-4,-5,-6,-7,-8,-9,0]*2
 D={}
 for i in range(120):D[i]=0
@@ -8,6 +8,17 @@ for r in range(8):
  for f in range(8):D[21+r*10+f]=1
 S=[-10,-1,1,10,-11,-9,9,11]
 K=[-21,-19,-12,-8,8,12,19,21]
+PST={"p":[0]*120,"n":[0]*120,"b":[0]*120,"r":[0]*120,"q":[0]*120,"k":[0]*120}
+for i in range(120):
+ if not D[i]:continue
+ r=i//10-2;fl=i%10-1
+ if r<0 or r>7 or fl<0 or fl>7:continue
+ PST["p"][i]=r*5 if r<7 else 0
+ PST["n"][i]=5 if 2<=r<=5 and 1<=fl<=6 else 0
+ PST["b"][i]=3 if abs(r-3.5)+abs(fl-3.5)<4 else 0
+ PST["r"][i]=10 if r in(0,7)or fl in(0,7)else 0
+ PST["q"][i]=2 if abs(r-3.5)+abs(fl-3.5)<5 else 0
+ PST["k"][i]=-10 if r in(0,7)and fl in(0,7)else 0
 def J(p,b):
  try:
   with urllib.request.urlopen(urllib.request.Request(E+p,data=b,headers={"content-type":"application/json"}))as r:return json.load(r)
@@ -78,71 +89,37 @@ def H(w):
   if p.isupper()!=w:continue
   if p.lower()=="k":return sq
  return 0
-def I(w):
- k=H(w)
- for sq in range(21,99):
-  if not D[sq]:continue
-  p=M[sq]
-  if not p:continue
-  if p.isupper()==w:continue
-  if p.lower()=="p":
-   d=10 if w else -10
-   if sq+d in (k-1,k+1):return 1
-  elif p.lower()=="n":
-   for d in K:
-    if sq+d==k:return 1
-  elif p.lower()=="b":
-   for d in(-11,-9,9,11):
-    t=sq
-    while D[t+d]:
-     if M[t+d]:
-      if M[t+d].isupper()!=w and M[t+d].lower()in"bq":return 1
-      break
-     t+=d
-  elif p.lower()=="r":
-   for d in(-10,-1,1,10):
-    t=sq
-    while D[t+d]:
-     if M[t+d]:
-      if M[t+d].isupper()!=w and M[t+d].lower()in"rq":return 1
-      break
-     t+=d
-  elif p.lower()=="q":
-   for d in(-11,-10,-9,-1,1,9,10,11):
-    t=sq
-    while D[t+d]:
-     if M[t+d]:
-      if M[t+d].isupper()!=w:return 1
-      break
-     t+=d
-  elif p.lower()=="k":
-   for d in S:
-    if sq+d==k:return 1
- return 0
-def E(w):
- s=0
- for sq in range(21,99):
-  if not D[sq]:continue
-  p=M[sq]
-  if not p:continue
-  v=P["pnbrqk".index(p.lower())]
-  if p.isupper()!=w:s-=v
-  else:s+=v
- return s
+def E(w,a=-9999,b=9999,d=3):
+ if d==0:return sum((V[p]+PST[p.lower()][sq]if p.isupper()else-V[p]-PST[p.lower()][sq])for sq in range(21,99)if D[sq]and(p:=M[sq]))
+ if w:
+  for sq in range(21,99):
+   if not D[sq]:continue
+   p=M[sq]
+   if not p or not p.isupper():continue
+   for f,t in G(True):
+    U(f,t);s=E(False,a,b,d-1);U(t,f)
+    if s>=b:return b
+    if s>a:a=s
+ else:
+  for sq in range(21,99):
+   if not D[sq]:continue
+   p=M[sq]
+   if not p or p.isupper():continue
+   for f,t in G(False):
+    U(f,t);s=E(True,a,b,d-1);U(t,f)
+    if s<=a:return a
+    if s<b:b=s
+ return a if w else b
 M=[0]*120
 g=J("/game",b"{}")
 while g["status"]!="done":
  while g["status"]=="your_move":
   w=g["colour"]=="w"
   B(g["fen"])
-  d=3
-  L=G(w)
-  b=-9999;m=L[0]if L else(0,0)
-  for f,t in L:
-   c=V(f,t)
-   v=-E(not w)
-   if v>b:b=v;m=(f,t)
-   U(f,t)
+  b=-9999;m=(0,0)
+  for f,t in G(w):
+   U(f,t);s=E(not w);U(t,f)
+   if s>b:b=s;m=(f,t)
   if m==(0,0):break
   f,t=m
   s=f"{chr(97+(f%10-1))}{10-f//10}{chr(97+(t%10-1))}{10-t//10}"
